@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+
+  crdc_integrator:
+    build:
+      context: ./
+      dockerfile: ./crdc_integrator.docker
+    ports:
+      - "80:80"
+    volumes:
+      - ./react-app:/app
+    depends_on:
+      - idc_index
+
+  idc_index:
+    build:
+      context: ./
+      dockerfile: ./idc_index.docker
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app:/app
+    environment:
+    command: python3 app.py
+
+  test:
+    build:
+      context: ./
+      dockerfile: ./idc_index.docker
+    profiles:
+      - donotstart
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./app:/app
+      - /home/johnny/.aws/:/root/.aws/
+    working_dir: /app
+    command: jupyter notebook --ip=0.0.0.0  --port=8888 --no-browser --allow-root
+
