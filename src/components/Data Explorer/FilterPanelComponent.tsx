@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { getCollections, Collection } from '../../api/index.ts';
 
 interface CheckboxGroupProps {
   title: string;
@@ -8,17 +9,21 @@ interface CheckboxGroupProps {
 }
 
 interface DropdownProps {
-  options: string[];
+  options: Collection[];
   onSelect: (selected: string) => void;
+}
+interface FilterPanelComponentProps {
+  isOpen: boolean;
+  onCollectionSelect: (collection: string) => void;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({ options, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState(options[0]);
+  const [selected, setSelected] = useState('Select Collections');
 
-  const handleSelect = (option: string) => {
-    setSelected(option);
-    onSelect(option);
+  const handleSelect = (option: Collection | { collection_id: string }) => {
+    setSelected(option.collection_id);
+    onSelect(option.collection_id);
     setIsOpen(false);
   };
 
@@ -33,13 +38,19 @@ const Dropdown: React.FC<DropdownProps> = ({ options, onSelect }) => {
       </button>
       {isOpen && (
         <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+          <li
+            className="p-2 hover:bg-gray-100 cursor-pointer"
+            onClick={() => handleSelect({ collection_id: 'All Collections' })}
+          >
+            All Collections
+          </li>
           {options.map((option) => (
             <li
-              key={option}
+              key={option.collection_id}
               className="p-2 hover:bg-gray-100 cursor-pointer"
               onClick={() => handleSelect(option)}
             >
-              {option}
+              {option.collection_id}
             </li>
           ))}
         </ul>
@@ -103,37 +114,36 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ title, items, name }) => 
   );
 };
 
-const FilterPanel: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
-  const [collections, setCollections] = useState<string[]>(['All Collections']);
-  const [selectedCollection, setSelectedCollection] = useState('All Collections');
+
+const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({ isOpen, onCollectionSelect }) => {
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchCollections = async () => {
       setIsLoading(true);
+      setError(null);
       try {
-        const response = await fetch('/api/collections');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const data = await response.json();
-          setCollections(['All Collections', ...data]);
-        } else {
-          const text = await response.text();
-          console.error('Received non-JSON response:', text);
-          throw new Error('Received non-JSON response');
-        }
+        console.log('Fetching collections...');
+        const data = await getCollections();
+        console.log('Fetched collections:', data);
+        setCollections(data);
       } catch (error) {
-        console.error('Error fetching collections:', error);
-        setCollections(['All Collections']); // Fallback to default
+        console.error('Failed to fetch collections:', error);
+        setError('Failed to load collections. Please try again later.');
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchCollections();
   }, []);
+
+  if (!isOpen) {
+    return null;
+  }
 
   const primarySites = [
     "Adrenal Gland", "Bile Duct", "Bladder", "Bone", "Bone Marrow", "Brain", "Breast",
@@ -154,17 +164,13 @@ const FilterPanel: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
 
   return (
     <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'w-64' : 'w-0'}`}>
-      <div className="h-full bg-white border rounded-b-lg shadow-lg p-4 overflow-y-auto">
-        {isLoading ? (
-          <div>Loading collections...</div>
-        ) : collections.length > 1 ? (
-          <Dropdown
-            options={collections}
-            onSelect={(collection) => setSelectedCollection(collection)}
-          />
-        ) : (
-          <div>Failed to load collections. Please try again later.</div>
-        )}
+    <div className="h-full bg-white border rounded-b-lg shadow-lg p-4 overflow-y-auto">
+      {!isLoading && collections.length > 0 && (
+        <Dropdown
+          options={collections}
+          onSelect={onCollectionSelect}
+        />
+      )}
         <CheckboxGroup title="Major Primary Site" items={primarySites} name="primary_sites" />
         <CheckboxGroup title="Experimental Strategy" items={expStrategies} name="exp_strategies" />
         <CheckboxGroup title="Clinical" items={clinicalFilters} name="clinical_filters" />
@@ -174,4 +180,4 @@ const FilterPanel: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
   );
 };
 
-export default FilterPanel;
+export default FilterPanelComponent;

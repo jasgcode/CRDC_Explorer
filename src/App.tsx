@@ -31,7 +31,7 @@ function App() {
         <div className="max-w-5xl w-full mx-auto bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-2xl font-semibold mb-4">Welcome to CRDC Integrator</h2>
           <p className="text-gray-600">
-            Explore and analyze data from the Cancer Research Data Commons with our intuitive interface.
+            Explore and analyze data from NCI Genomic Data Commons (GDC) and NCI Imaging Data Commons (IDC) with our intuitive interface.
           </p>
         </div>
         <div className="flex-grow bg-white rounded-lg shadow-lg overflow-hidden">

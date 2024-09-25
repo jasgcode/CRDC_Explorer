@@ -5,30 +5,39 @@ import DataPanel from './DataPanel';
 
 interface FilterPanelProps {
   isOpen: boolean;
+  onCollectionSelect: (collection: string) => void;
 }
 
-const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen }) => (
+const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onCollectionSelect }) => (
   <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'w-80' : 'w-0'}`}>
     <div className="h-full bg-white border-r border-gray-200 shadow-lg">
-      <FilterPanelComponent isOpen={isOpen} />
+      <FilterPanelComponent isOpen={isOpen} onCollectionSelect={onCollectionSelect} />
     </div>
   </div>
 );
 
-const DataGrid: React.FC = () => (
+interface DataGridProps {
+  selectedCollection: string;
+}
+
+const DataGrid: React.FC<DataGridProps> = ({ selectedCollection }) => (
   <div className="h-full overflow-auto bg-white rounded-lg shadow-lg">
-    <DataPanel />
+    <DataPanel selectedCollection={selectedCollection} />
   </div>
 );
 
 const DataExplorer: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCollection, setSelectedCollection] = useState('All Collections');
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);   
-
+    setSearchTerm(e.target.value);   
     // Implement your search logic here
+  };
+
+  const handleCollectionSelect = (collection: string) => {
+    setSelectedCollection(collection);
   };
 
   return (
@@ -49,7 +58,7 @@ const DataExplorer: React.FC = () => {
         </div>
       </header>
       <div className="flex flex-grow overflow-hidden">
-        <FilterPanel isOpen={isFilterOpen} />
+        <FilterPanel isOpen={isFilterOpen} onCollectionSelect={handleCollectionSelect} />
         <main className="flex-grow p-2  bg-gray-50 rounded-lg shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Data Results</h2>
@@ -64,7 +73,7 @@ const DataExplorer: React.FC = () => {
             </button>
           </div>
           <div className="bg-white rounded-lg shadow-lg overflow-hidden px-4 py-4">
-            <DataGrid />
+            <DataGrid selectedCollection={selectedCollection} />
           </div>
         </main>
       </div>
