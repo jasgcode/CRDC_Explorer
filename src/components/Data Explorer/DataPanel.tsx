@@ -1,51 +1,66 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { getPatients, Patient } from '../../api/index.ts';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { getPatients, getData, getGenomicData, FilterParams } from '../../api/index';
+import ImagingDataPanel from './ImagingDataPanel';
+import GenomicDataPanel from './GenomicPanel';
 
 interface DataPanelProps {
   selectedCollection: string;
+  filters: FilterParams;
 }
 
 type PatientIdentifier = string;
 
-// Define the possible types of API responses
-type APIResponse = string | PatientIdentifier[] | Patient[];
+interface GenomicData {
+  uuid: string;
+  data_type: string;
+  data_category: string;
+  experimental_strategy: string;
+  download_url: string;
+}
 
-const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection }) => {
+interface ImagingData {
+  ohif_v2_url: string;
+  ohif_v3_url: string;
+  slim_url: string;
+  series_aws_url: string;
+  SeriesInstanceUID: string;
+  StudyInstanceUID: string;
+  Modality: string;
+  SeriesDescription: string;
+  SeriesNumber: string;
+  StudyDate: string;
+  StudyDescription: string;
+}
+
+const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) => {
   const [patients, setPatients] = useState<PatientIdentifier[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientIdentifier | null>(null);
+  const [imagingData, setImagingData] = useState<ImagingData[]>([]);
+  const [genomicData, setGenomicData] = useState<GenomicData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  const processAPIResponse = (response: APIResponse): PatientIdentifier[] => {
-    if (typeof response === 'string') {
-      // If it's a string, split it into an array
-      return response.split(',').map(id => id.trim());
-    } else if (Array.isArray(response)) {
-      // If it's an array, map it to ensure we have an array of strings
-      return response.map(item => typeof item === 'string' ? item : item.PatientID);
-    }
-    // If it's neither, return an empty array
-    console.error('Unexpected API response format:', response);
-    return [];
-  };
-
   const fetchPatients = async (offset: number = 0) => {
-    if (isLoading || !hasMore) return;
+    if (isLoading || !hasMore || !selectedCollection || selectedCollection === 'All Collections') return;
 
     setIsLoading(true);
     setError(null);
     try {
-      const newPatients = await getPatients(selectedCollection, `offset=${offset}&limit=20`);
-      console.log('Fetched patients:', newPatients); // Log the fetched data
+      const newPatients = await getPatients(selectedCollection, filters);
+      console.log('Fetched patients:', newPatients);
 
-      if (Array.isArray(newPatients) && newPatients.length === 0) {
+      if (newPatients.length === 0) {
         setHasMore(false);
       } else {
-        const processedPatients = processAPIResponse(newPatients);
-        setPatients(prevPatients => [...prevPatients, ...processedPatients]);
+        setPatients(prevPatients => {
+          const uniqueNewPatients = newPatients.filter(id => !prevPatients.includes(id));
+          return [...prevPatients, ...uniqueNewPatients];
+        });
       }
     } catch (err) {
       console.error('Error fetching patients:', err);
@@ -61,6 +76,8 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection }) => {
     setHasMore(true);
     setError(null);
     setSelectedPatient(null);
+    setImagingData([]);
+    setGenomicData([]);
     setIsInitialLoad(true);
 
     if (selectedCollection && selectedCollection !== 'All Collections') {
@@ -68,7 +85,31 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection }) => {
     } else {
       setIsInitialLoad(false);
     }
-  }, [selectedCollection]);
+  }, [selectedCollection, filters]);
+
+  const handlePatientSelect = async (patientId: PatientIdentifier) => {
+    console.log('Selecting patient:', patientId);
+    setSelectedPatient(patientId);
+    setIsDataLoading(true);
+    setDataError(null);
+    setImagingData([]);
+    setGenomicData([]);
+    try {
+      const [imagingResult, genomicResult] = await Promise.all([
+        getData(patientId, selectedCollection),
+        getGenomicData(patientId, filters)  // Use the filters here
+      ]);
+      console.log('Received patient data:', imagingResult, genomicResult);
+      setImagingData(imagingResult as ImagingData[]);
+      setGenomicData(genomicResult);
+    } catch (err) {
+      console.error('Error fetching patient data:', err);
+      setDataError('Failed to load patient data. Please try again later.');
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
 
   const handleScroll = () => {
     if (listRef.current) {
@@ -101,7 +142,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection }) => {
         {patients.map((patientId, index) => (
           <li
             key={`${patientId}-${index}`}
-            onClick={() => setSelectedPatient(patientId)}
+            onClick={() => handlePatientSelect(patientId)}
             className={`py-2 cursor-pointer hover:bg-gray-100 ${
               selectedPatient === patientId ? 'bg-blue-100' : 'text-gray-700'
             }`}
@@ -119,32 +160,32 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection }) => {
 
   return (
     <div className="flex h-full bg-gray-50">
-      <div className="w-1/4 bg-white rounded-lg shadow-lg p-4 mr-4 overflow-auto">
+      <div className="w-1/4 bg-white rounded-lg shadow-lg p-4 mr-4 overflow-hidden flex flex-col h-[70vh]">
         <h3 className="font-bold text-gray-800 mb-2">Patient IDs</h3>
         <ul 
           ref={listRef} 
-          className="divide-y divide-gray-200 h-64 overflow-y-auto" 
+          className="divide-y divide-gray-200 overflow-y-auto flex-grow" 
           onScroll={handleScroll}
         >
           {renderPatientList()}
         </ul>
       </div>
-      <div className="flex-1 flex">
-        <div className="flex-1 bg-white rounded-lg shadow-lg p-4 mr-4">
-          <h3 className="font-bold text-gray-800 mb-2">Genomic Data</h3>
-          {selectedPatient ? (
-            <p className="text-gray-600">Genomic data for {selectedPatient} will be displayed here.</p>
-          ) : (
-            <p className="text-gray-600">Select a patient to view genomic data.</p>
-          )}
+      <div className="flex-1 overflow-hidden flex">
+        <div className="w-1/2 pr-2">
+          <GenomicDataPanel
+            selectedPatient={selectedPatient}
+            genomicData={genomicData}
+            isDataLoading={isDataLoading}
+            dataError={dataError}
+          />
         </div>
-        <div className="flex-1 bg-white rounded-lg shadow-lg p-4">
-          <h3 className="font-bold text-gray-800 mb-2">Imaging Data</h3>
-          {selectedPatient ? (
-            <p className="text-gray-600">Imaging data for {selectedPatient} will be displayed here.</p>
-          ) : (
-            <p className="text-gray-600">Select a patient to view imaging data.</p>
-          )}
+        <div className="w-1/2 pl-2">
+          <ImagingDataPanel
+            selectedPatient={selectedPatient}
+            imagingData={imagingData}
+            isDataLoading={isDataLoading}
+            dataError={dataError}
+          />
         </div>
       </div>
     </div>

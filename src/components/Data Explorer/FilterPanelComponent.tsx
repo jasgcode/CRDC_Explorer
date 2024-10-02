@@ -6,7 +6,10 @@ interface CheckboxGroupProps {
   title: string;
   items: string[];
   name: string;
+  checkedItems: string[];
+  onCheckedItemsChange: (name: string, items: string[]) => void;
 }
+
 
 interface DropdownProps {
   options: Collection[];
@@ -15,6 +18,7 @@ interface DropdownProps {
 interface FilterPanelComponentProps {
   isOpen: boolean;
   onCollectionSelect: (collection: string) => void;
+  onFiltersChange: (filters: Record<string, string[]>) => void;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({ options, onSelect }) => {
@@ -59,22 +63,22 @@ const Dropdown: React.FC<DropdownProps> = ({ options, onSelect }) => {
   );
 };
 
-const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ title, items, name }) => {
+const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ title, items, name, checkedItems, onCheckedItemsChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [checkedItems, setCheckedItems] = useState<string[]>(items);
 
   const handleToggleAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      setCheckedItems(items);
+      onCheckedItemsChange(name, items);
     } else {
-      setCheckedItems([]);
+      onCheckedItemsChange(name, []);
     }
   };
 
   const handleToggle = (item: string) => {
-    setCheckedItems(prev =>
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
-    );
+    const newCheckedItems = checkedItems.includes(item)
+      ? checkedItems.filter(i => i !== item)
+      : [...checkedItems, item];
+    onCheckedItemsChange(name, newCheckedItems);
   };
 
   return (
@@ -115,11 +119,17 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ title, items, name }) => 
 };
 
 
-const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({ isOpen, onCollectionSelect }) => {
+
+const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({ isOpen, onCollectionSelect, onFiltersChange }) => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [filters, setFilters] = useState<Record<string, string[]>>({
+    primary_sites: [],
+    exp_strategies: [],
+    clinical_filters: [],
+    metadata_filters: [],
+  });
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -140,7 +150,16 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({ isOpen, onC
 
     fetchCollections();
   }, []);
+  useEffect(() => {
+    onFiltersChange(filters);
+  }, [filters, onFiltersChange]);
 
+  const handleCheckedItemsChange = (name: string, items: string[]) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: items,
+    }));
+  };
   if (!isOpen) {
     return null;
   }
@@ -164,17 +183,41 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({ isOpen, onC
 
   return (
     <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'w-64' : 'w-0'}`}>
-    <div className="h-full bg-white border rounded-b-lg shadow-lg p-4 overflow-y-auto">
-      {!isLoading && collections.length > 0 && (
-        <Dropdown
-          options={collections}
-          onSelect={onCollectionSelect}
+      <div className="h-full bg-white border rounded-b-lg shadow-lg p-4 overflow-y-auto">
+        {!isLoading && collections.length > 0 && (
+          <Dropdown
+            options={collections}
+            onSelect={onCollectionSelect}
+          />
+        )}
+        <CheckboxGroup
+          title="Major Primary Site"
+          items={primarySites}
+          name="primary_sites"
+          checkedItems={filters.primary_sites}
+          onCheckedItemsChange={handleCheckedItemsChange}
         />
-      )}
-        <CheckboxGroup title="Major Primary Site" items={primarySites} name="primary_sites" />
-        <CheckboxGroup title="Experimental Strategy" items={expStrategies} name="exp_strategies" />
-        <CheckboxGroup title="Clinical" items={clinicalFilters} name="clinical_filters" />
-        <CheckboxGroup title="Metadata" items={metadataFilters} name="metadata_filters" />
+        <CheckboxGroup
+          title="Experimental Strategy"
+          items={expStrategies}
+          name="exp_strategies"
+          checkedItems={filters.exp_strategies}
+          onCheckedItemsChange={handleCheckedItemsChange}
+        />
+        <CheckboxGroup
+          title="Clinical"
+          items={clinicalFilters}
+          name="clinical_filters"
+          checkedItems={filters.clinical_filters}
+          onCheckedItemsChange={handleCheckedItemsChange}
+        />
+        <CheckboxGroup
+          title="Metadata"
+          items={metadataFilters}
+          name="metadata_filters"
+          checkedItems={filters.metadata_filters}
+          onCheckedItemsChange={handleCheckedItemsChange}
+        />
       </div>
     </div>
   );
