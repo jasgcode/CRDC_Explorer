@@ -38,7 +38,6 @@ function App() {
           <DataExplorer />
         </div>
       </main>
-
     </div>
   );
 }

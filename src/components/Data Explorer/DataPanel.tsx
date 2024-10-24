@@ -1,14 +1,17 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { getPatients, getData, getGenomicData, FilterParams } from '../../api/index';
 import ImagingDataPanel from './ImagingDataPanel';
 import GenomicDataPanel from './GenomicPanel';
+
+interface PatientInfo {
+  id: string;
+  disease_type: string;
+}
 
 interface DataPanelProps {
   selectedCollection: string;
   filters: FilterParams;
 }
-
-type PatientIdentifier = string;
 
 interface GenomicData {
   uuid: string;
@@ -33,8 +36,8 @@ interface ImagingData {
 }
 
 const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) => {
-  const [patients, setPatients] = useState<PatientIdentifier[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<PatientIdentifier | null>(null);
+  const [patients, setPatients] = useState<PatientInfo[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [imagingData, setImagingData] = useState<ImagingData[]>([]);
   const [genomicData, setGenomicData] = useState<GenomicData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +61,9 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
         setHasMore(false);
       } else {
         setPatients(prevPatients => {
-          const uniqueNewPatients = newPatients.filter(id => !prevPatients.includes(id));
+          const uniqueNewPatients = newPatients.filter(
+            patient => !prevPatients.some(p => p.id === patient.id)
+          );
           return [...prevPatients, ...uniqueNewPatients];
         });
       }
@@ -87,7 +92,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
     }
   }, [selectedCollection, filters]);
 
-  const handlePatientSelect = async (patientId: PatientIdentifier) => {
+  const handlePatientSelect = async (patientId: string) => {
     console.log('Selecting patient:', patientId);
     setSelectedPatient(patientId);
     setIsDataLoading(true);
@@ -97,7 +102,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
     try {
       const [imagingResult, genomicResult] = await Promise.all([
         getData(patientId, selectedCollection),
-        getGenomicData(patientId, filters)  // Use the filters here
+        getGenomicData(patientId, filters)
       ]);
       console.log('Received patient data:', imagingResult, genomicResult);
       setImagingData(imagingResult as ImagingData[]);
@@ -110,7 +115,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
     }
   };
 
-
   const handleScroll = () => {
     if (listRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = listRef.current;
@@ -119,6 +123,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
       }
     }
   };
+
 
   const renderPatientList = () => {
     if (isInitialLoad) {
@@ -139,15 +144,20 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
 
     return (
       <>
-        {patients.map((patientId, index) => (
+        {patients.map((patient, index) => (
           <li
-            key={`${patientId}-${index}`}
-            onClick={() => handlePatientSelect(patientId)}
-            className={`py-2 cursor-pointer hover:bg-gray-100 ${
-              selectedPatient === patientId ? 'bg-blue-100' : 'text-gray-700'
+            key={`${patient.id}-${index}`}
+            onClick={() => handlePatientSelect(patient.id)}
+            className={`p-2 cursor-pointer hover:bg-gray-100 ${
+              selectedPatient === patient.id ? 'bg-blue-100' : 'text-gray-700'
             }`}
           >
-            {patientId}
+            <div className="flex flex-col">
+              <span className="font-medium">{patient.id}</span>
+              <span className="text-sm text-gray-600">
+                Disease: {patient.disease_type}
+              </span>
+            </div>
           </li>
         ))}
         {isLoading && <div className="text-center p-2">Loading more patients...</div>}
@@ -158,10 +168,31 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
     );
   };
 
+  const renderHeader = () => {
+    if (!selectedCollection || selectedCollection === 'All Collections') {
+      return (
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-gray-800">Patient IDs</h3>
+          <span className="text-sm text-gray-500">No collection selected</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-bold text-gray-800">Patient IDs</h3>
+        <span className="text-sm font-medium px-2 py-1 bg-blue-50 text-blue-700 rounded">
+          {selectedCollection}
+        </span>
+      </div>
+    );
+  };
+
+
   return (
     <div className="flex h-full bg-gray-50">
       <div className="w-1/4 bg-white rounded-lg shadow-lg p-4 mr-4 overflow-hidden flex flex-col h-[70vh]">
-        <h3 className="font-bold text-gray-800 mb-2">Patient IDs</h3>
+        {renderHeader()}
         <ul 
           ref={listRef} 
           className="divide-y divide-gray-200 overflow-y-auto flex-grow" 
