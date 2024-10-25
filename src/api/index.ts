@@ -116,8 +116,14 @@ export const getCollections = async (): Promise<Collection[]> => {
   }
 };
 
-export const getPatients = async (collection: string, filters: FilterParams): Promise<PatientInfo[]> => {
+export const getPatients = async (
+  collection: string,
+  params: FilterParams
+): Promise<PatientInfo[]> => {
   try {
+    const { operations = {}, ...filters } = params; // Destructure with default empty object for operations
+    
+    // Base filter for collection
     const gdcFilters: any = {
       op: "and",
       content: [
@@ -131,104 +137,59 @@ export const getPatients = async (collection: string, filters: FilterParams): Pr
       ]
     };
 
-    // Handle primary sites with configurable AND/OR
+    // Helper function to create filter content - always using OR operation
+    const createFilterContent = (field: string, values: string[]) => {
+      return {
+        op: "in",
+        content: {
+          field,
+          value: values
+        }
+      };
+    };
+
+    // Add primary sites filter
     if (filters.primary_sites?.length) {
-      const operation = filters.operations?.primary_sites || 'or';
-      if (operation === 'or') {
-        gdcFilters.content.push({
-          op: "in",
-          content: {
-            field: "cases.primary_site",
-            value: filters.primary_sites
-          }
-        });
-      } else {
-        // For AND operation, create separate conditions for each value
-        filters.primary_sites.forEach(site => {
-          gdcFilters.content.push({
-            op: "=",
-            content: {
-              field: "cases.primary_site",
-              value: site
-            }
-          });
-        });
-      }
+      gdcFilters.content.push(
+        createFilterContent(
+          "cases.primary_site",
+          filters.primary_sites
+        )
+      );
     }
 
-    // Handle disease types with configurable AND/OR
+    // Add disease types filter
     if (filters.disease_types?.length) {
-      const operation = filters.operations?.disease_types || 'or';
-      if (operation === 'or') {
-        gdcFilters.content.push({
-          op: "in",
-          content: {
-            field: "cases.disease_type",
-            value: filters.disease_types
-          }
-        });
-      } else {
-        filters.disease_types.forEach(type => {
-          gdcFilters.content.push({
-            op: "=",
-            content: {
-              field: "cases.disease_type",
-              value: type
-            }
-          });
-        });
-      }
+      gdcFilters.content.push(
+        createFilterContent(
+          "cases.disease_type",
+          filters.disease_types
+        )
+      );
     }
 
-    // Handle experimental strategies with configurable AND/OR
+    // Add experimental strategy filter
     if (filters.exp_strategies?.length) {
-      const operation = filters.operations?.exp_strategies || 'or';
-      if (operation === 'or') {
-        gdcFilters.content.push({
-          op: "in",
-          content: {
-            field: "files.experimental_strategy",
-            value: filters.exp_strategies
-          }
-        });
-      } else {
-        filters.exp_strategies.forEach(strategy => {
-          gdcFilters.content.push({
-            op: "=",
-            content: {
-              field: "files.experimental_strategy",
-              value: strategy
-            }
-          });
-        });
-      }
+      gdcFilters.content.push(
+        createFilterContent(
+          "files.experimental_strategy",
+          filters.exp_strategies
+        )
+      );
     }
 
-    // Handle data categories with configurable AND/OR
+    // Add data categories filter
     if (filters.data_categories?.length) {
-      const operation = filters.operations?.data_categories || 'or';
-      if (operation === 'or') {
-        gdcFilters.content.push({
-          op: "in",
-          content: {
-            field: "files.data_category",
-            value: filters.data_categories
-          }
-        });
-      } else {
-        filters.data_categories.forEach(category => {
-          gdcFilters.content.push({
-            op: "=",
-            content: {
-              field: "files.data_category",
-              value: category
-            }
-          });
-        });
-      }
+      gdcFilters.content.push(
+        createFilterContent(
+          "files.data_category",
+          filters.data_categories
+        )
+      );
     }
 
-    // Make request to GDC API
+    console.log('GDC Filters:', JSON.stringify(gdcFilters, null, 2));
+
     const response: AxiosResponse<GDCCasesResponse> = await axios.get(
       'https://api.gdc.cancer.gov/cases',
       {
@@ -252,7 +213,6 @@ export const getPatients = async (collection: string, filters: FilterParams): Pr
   }
 };
 
-
 export const getData = async (patientId: string, collection: string): Promise<PatientData> => {
   try {
     const response: AxiosResponse<PatientData> = await axios.get('/api/data', {
@@ -264,6 +224,7 @@ export const getData = async (patientId: string, collection: string): Promise<Pa
     throw error;
   }
 };
+
 export const getGenomicData = async (
   patientId: string,
   filters: FilterParams

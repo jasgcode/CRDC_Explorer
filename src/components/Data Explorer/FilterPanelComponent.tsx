@@ -8,8 +8,9 @@ interface CheckboxGroupProps {
   name: string;
   checkedItems: string[];
   onCheckedItemsChange: (name: string, items: string[]) => void;
-  operation: 'and' | 'or';
-  onOperationChange: (name: string, operation: 'and' | 'or') => void;
+  operation?: 'and' | 'or';  // Make operation optional
+  onOperationChange?: (name: string, operation: 'and' | 'or') => void;  // Make operation change optional
+  showOperationToggle?: boolean;  // Add flag to control toggle visibility
 }
 
 interface DropdownProps {
@@ -79,8 +80,9 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   name,
   checkedItems,
   onCheckedItemsChange,
-  operation,
-  onOperationChange
+  operation = 'or',  // Default to 'or'
+  onOperationChange,
+  showOperationToggle = false  // Default to false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -126,28 +128,30 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
               />
               <span className="ml-2">Check All</span>
             </label>
-            <div className="flex items-center space-x-2 text-sm">
-              <button
-                className={`px-2 py-1 rounded ${
-                  operation === 'or'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-                onClick={() => onOperationChange(name, 'or')}
-              >
-                OR
-              </button>
-              <button
-                className={`px-2 py-1 rounded ${
-                  operation === 'and'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-                onClick={() => onOperationChange(name, 'and')}
-              >
-                AND
-              </button>
-            </div>
+            {showOperationToggle && onOperationChange && (
+              <div className="flex items-center space-x-2 text-sm">
+                <button
+                  className={`px-2 py-1 rounded ${
+                    operation === 'or'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                  onClick={() => onOperationChange(name, 'or')}
+                >
+                  OR
+                </button>
+                <button
+                  className={`px-2 py-1 rounded ${
+                    operation === 'and'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                  onClick={() => onOperationChange(name, 'and')}
+                >
+                  AND
+                </button>
+              </div>
+            )}
           </div>
           <div className="max-h-48 overflow-y-auto p-2">
             {items.map(item => (
@@ -168,7 +172,6 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
     </div>
   );
 };
-
 
 
 const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
@@ -607,7 +610,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
             onSelect={onCollectionSelect}
           />
         )}
-         <CheckboxGroup
+      <CheckboxGroup
         title="Major Primary Site"
         items={primarySites}
         name="primary_sites"
@@ -615,6 +618,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
         onCheckedItemsChange={handleCheckedItemsChange}
         operation={localOperations.primary_sites}
         onOperationChange={handleOperationChange}
+        showOperationToggle={false}  // Hide toggle for single-value field
       />
       <CheckboxGroup
         title="Disease Types"
@@ -624,6 +628,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
         onCheckedItemsChange={handleCheckedItemsChange}
         operation={localOperations.disease_types}
         onOperationChange={handleOperationChange}
+        showOperationToggle={false}  // Hide toggle for single-value field
       />
       <CheckboxGroup
         title="Data Categories"
@@ -633,6 +638,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
         onCheckedItemsChange={handleCheckedItemsChange}
         operation={localOperations.data_categories}
         onOperationChange={handleOperationChange}
+        showOperationToggle={false}  // Hide toggle for single-value field
       />
       <CheckboxGroup
         title="Experimental Strategy"
@@ -642,6 +648,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
         onCheckedItemsChange={handleCheckedItemsChange}
         operation={localOperations.exp_strategies}
         onOperationChange={handleOperationChange}
+        showOperationToggle={false}  // Hide toggle for single-value field
       />
         {/* <CheckboxGroup
           title="Clinical"
