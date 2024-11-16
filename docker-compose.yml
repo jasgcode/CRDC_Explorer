@@ -1,40 +1,41 @@
-version: '3.9'
+# docker-compose.yml
+version: '3.8'
 
 services:
-
-  crdc_integrator:
-    build:
-      context: ./
-      dockerfile: ./crdc_integrator.docker
+  frontend:
+    build: 
+      context: .
+      dockerfile: frontend.Dockerfile
     ports:
-      - "80:80"
+      - "5173:5173"
     volumes:
-      - ./react-app:/app
-    depends_on:
-      - idc_index
-
-  idc_index:
-    build:
-      context: ./
-      dockerfile: ./idc_index.docker
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./app:/app
+      - .:/app
+      - /app/node_modules
     environment:
-    command: python3 app.py
+      - NODE_ENV=development
+      - VITE_API_URL=http://backend:5001  # Add this environment variable
+    depends_on:
+      - backend
+    networks:
+      - app-network
 
-  test:
+  backend:
     build:
-      context: ./
-      dockerfile: ./idc_index.docker
-    profiles:
-      - donotstart
+      context: .
+      dockerfile: backend.Dockerfile
     ports:
-      - "8888:8888"
+      - "5001:5001"
     volumes:
-      - ./app:/app
-      - /home/johnny/.aws/:/root/.aws/
-    working_dir: /app
-    command: jupyter notebook --ip=0.0.0.0  --port=8888 --no-browser --allow-root
+      - ./:/app
+      - /app/__pycache__
+      - /app/app/__pycache__
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app/app.py
+    networks:
+      - app-network
+    command: python ./app/app.py
 
+networks:
+  app-network:
+    driver: bridge

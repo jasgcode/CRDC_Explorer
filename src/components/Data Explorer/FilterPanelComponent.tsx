@@ -80,9 +80,9 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   name,
   checkedItems,
   onCheckedItemsChange,
-  operation = 'or',  // Default to 'or'
+  operation = 'or',
   onOperationChange,
-  showOperationToggle = false  // Default to false
+  showOperationToggle = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -119,7 +119,7 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       </button>
       {isOpen && (
         <div className="mt-2 bg-white border rounded-md">
-          <div className="p-2 border-b flex items-center justify-between">
+          <div className="p-2 border-b flex items-center justify-between sticky top-0 bg-white z-10">
             <label className="flex items-center">
               <input
                 type="checkbox"
@@ -214,18 +214,8 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
     fetchCollections();
   }, []);
 
-  // Handle filter updates with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onFiltersChange({
-        filters: localFilters,
-        operations: localOperations,
-      });
-    }, 300); // Add a small delay to prevent rapid updates
 
-    return () => clearTimeout(timer);
-  }, [localFilters, localOperations, onFiltersChange]);
-
+  
   const handleCheckedItemsChange = useCallback((name: string, items: string[]) => {
     setLocalFilters(prev => ({
       ...prev,
@@ -240,10 +230,37 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
     }));
   }, []);
 
+  // Add handler for applying filters
+  const handleApplyFilters = () => {
+    onFiltersChange({
+      filters: localFilters,
+      operations: localOperations,
+    });
+  };
+
+  // Add handler for resetting filters
+  const handleResetFilters = () => {
+    setLocalFilters({
+      primary_sites: [],
+      exp_strategies: [],
+      data_categories: [],
+      disease_types: [],
+    });
+    setLocalOperations({
+      primary_sites: 'or',
+      exp_strategies: 'or',
+      data_categories: 'or',
+      disease_types: 'or',
+    });
+  };
+  
   if (!isOpen) {
     return null;
   }
-
+  const totalSelectedFilters = Object.values(localFilters).reduce(
+    (sum, filters) => sum + filters.length,
+    0
+  );
 
   const primarySites = [
     "accessory sinuses",
@@ -600,57 +617,90 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
     "structural variation",
     "transcriptome profiling"
   ];
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'w-64' : 'w-0'}`}>
-      <div className="h-full bg-white border rounded-b-lg shadow-lg p-4 overflow-y-auto">
-        {!isLoading && collections.length > 0 && (
-          <Dropdown
-            options={collections}
-            onSelect={onCollectionSelect}
+    <div className="h-full overflow-hidden">
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b z-50">
+          {!isLoading && collections.length > 0 && (
+            <Dropdown
+              options={collections}
+              onSelect={onCollectionSelect}
+            />
+          )}
+        </div>
+        <div className="flex-1 overflow-y-auto px-4">
+          <CheckboxGroup
+            title="Major Primary Site"
+            items={primarySites}
+            name="primary_sites"
+            checkedItems={localFilters.primary_sites}
+            onCheckedItemsChange={handleCheckedItemsChange}
+            operation={localOperations.primary_sites}
+            onOperationChange={handleOperationChange}
+            showOperationToggle={false}
           />
-        )}
-      <CheckboxGroup
-        title="Major Primary Site"
-        items={primarySites}
-        name="primary_sites"
-        checkedItems={localFilters.primary_sites}
-        onCheckedItemsChange={handleCheckedItemsChange}
-        operation={localOperations.primary_sites}
-        onOperationChange={handleOperationChange}
-        showOperationToggle={false}  // Hide toggle for single-value field
-      />
-      <CheckboxGroup
-        title="Disease Types"
-        items={diseaseTypes}
-        name="disease_types"
-        checkedItems={localFilters.disease_types}
-        onCheckedItemsChange={handleCheckedItemsChange}
-        operation={localOperations.disease_types}
-        onOperationChange={handleOperationChange}
-        showOperationToggle={false}  // Hide toggle for single-value field
-      />
-      <CheckboxGroup
-        title="Data Categories"
-        items={dataCategories}
-        name="data_categories"
-        checkedItems={localFilters.data_categories}
-        onCheckedItemsChange={handleCheckedItemsChange}
-        operation={localOperations.data_categories}
-        onOperationChange={handleOperationChange}
-        showOperationToggle={false}  // Hide toggle for single-value field
-      />
-      <CheckboxGroup
-        title="Experimental Strategy"
-        items={expStrategies}
-        name="exp_strategies"
-        checkedItems={localFilters.exp_strategies}
-        onCheckedItemsChange={handleCheckedItemsChange}
-        operation={localOperations.exp_strategies}
-        onOperationChange={handleOperationChange}
-        showOperationToggle={false}  // Hide toggle for single-value field
-      />
-        {/* <CheckboxGroup
+          <CheckboxGroup
+            title="Disease Types"
+            items={diseaseTypes}
+            name="disease_types"
+            checkedItems={localFilters.disease_types}
+            onCheckedItemsChange={handleCheckedItemsChange}
+            operation={localOperations.disease_types}
+            onOperationChange={handleOperationChange}
+            showOperationToggle={false}
+          />
+          <CheckboxGroup
+            title="Data Categories"
+            items={dataCategories}
+            name="data_categories"
+            checkedItems={localFilters.data_categories}
+            onCheckedItemsChange={handleCheckedItemsChange}
+            operation={localOperations.data_categories}
+            onOperationChange={handleOperationChange}
+            showOperationToggle={false}
+          />
+          <CheckboxGroup
+            title="Experimental Strategy"
+            items={expStrategies}
+            name="exp_strategies"
+            checkedItems={localFilters.exp_strategies}
+            onCheckedItemsChange={handleCheckedItemsChange}
+            operation={localOperations.exp_strategies}
+            onOperationChange={handleOperationChange}
+            showOperationToggle={false}
+          />
+        </div>
+        {/* Fixed button container at the bottom */}
+        <div className="p-4 border-t bg-white">
+          {totalSelectedFilters > 0 && (
+            <div className="text-sm text-gray-600 mb-2">
+              {totalSelectedFilters} filter{totalSelectedFilters !== 1 ? 's' : ''} selected
+            </div>
+          )}
+          <div className="flex space-x-2">
+            <button
+              onClick={handleResetFilters}
+              className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            >
+              Reset
+            </button>
+            <button
+              onClick={handleApplyFilters}
+              className="flex-1 px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+        /* <CheckboxGroup
           title="Clinical"
           items={clinicalFilters}
           name="clinical_filters"
@@ -663,10 +713,7 @@ const FilterPanelComponent: React.FC<FilterPanelComponentProps> = ({
           name="metadata_filters"
           checkedItems={filters.metadata_filters}
           onCheckedItemsChange={handleCheckedItemsChange}
-        /> */}
-      </div>
-    </div>
-  );
-};
+        /> */
+    
 
 export default FilterPanelComponent;

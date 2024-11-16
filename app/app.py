@@ -2,11 +2,13 @@ from flask import Flask, jsonify, request
 from flask import make_response
 from json import loads, dumps
 from idc_index import index
+from flask import Flask
+from flask_cors import CORS 
 import subprocess
 import sys
 
 app = Flask(__name__)
-
+CORS(app)
 def filter_primary_sites(patient_ids, primary_sites):
 	print("before", file=sys.stderr)
 	if primary_sites is None or primary_sites == "":
