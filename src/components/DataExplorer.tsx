@@ -1,19 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
-import { FilterParams } from '../../api/index';
-import FilterPanelComponent from './FilterPanelComponent';
-import DataPanel from './DataPanel';
-
-interface FilterState {
-  filters: Record<string, string[]>;
-  operations: Record<string, 'and' | 'or'>;
-}
-
-interface FilterPanelProps {
-  isOpen: boolean;
-  onCollectionSelect: (collection: string) => void;
-  onFiltersChange: (filterState: FilterState) => void;
-}
+import { Filter } from 'lucide-react';
+import { FilterParams } from '../api/index';
+import FilterPanelComponent from './Filters/FilterPanelComponent';
+import DataPanel from './Data/shared/DataPanel';
+import { FilterPanelProps, FilterState } from '../types/interfaces';
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onCollectionSelect, onFiltersChange }) => (
   <div 
@@ -31,10 +21,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onCollectionSelect, o
   </div>
 );
 
-
 interface DataGridProps {
   selectedCollection: string;
-  filters: FilterState['filters'];  // Just pass the filters part to match DataPanel's expectations
+  filters: FilterState['filters'];
   operations: FilterState['operations'];
 }
 
@@ -47,13 +36,10 @@ const DataGrid: React.FC<DataGridProps> = ({ selectedCollection, filters, operat
   </div>
 );
 
-
-
 interface DataExplorerProps {}
 
 const DataExplorer: React.FC<DataExplorerProps> = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCollection, setSelectedCollection] = useState<string>('');
   const [filterState, setFilterState] = useState<FilterState>({
     filters: {
@@ -78,35 +64,19 @@ const DataExplorer: React.FC<DataExplorerProps> = () => {
     setFilterState(newFilterState);
   }, []);
 
-  const handleSearch = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  }, []);
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-xl font-semibold text-gray-800">Data Explorer</h2>
-        <div className="flex items-center space-x-4">
-          <div className="relative flex items-center">
-            <Search className="h-5 w-5 text-gray-400 absolute left-3" />
-            <input
-              type="text"
-              placeholder="Enter Patient ID"
-              value={searchTerm}
-              onChange={handleSearch}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <button
-            className={`p-2 rounded-full shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ${
-              isFilterOpen ? 'bg-blue-500 text-white' : 'bg-white text-gray-600'
-            }`}
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            aria-label={isFilterOpen ? "Hide filters" : "Show filters"}
-          >
-            <Filter className="h-5 w-5" />
-          </button>
-        </div>
+        <button
+          className={`p-2 rounded-full shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ${
+            isFilterOpen ? 'bg-blue-500 text-white' : 'bg-white text-gray-600'
+          }`}
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          aria-label={isFilterOpen ? "Hide filters" : "Show filters"}
+        >
+          <Filter className="h-5 w-5" />
+        </button>
       </div>
 
       <div className="flex flex-grow relative">
@@ -133,6 +103,5 @@ const DataExplorer: React.FC<DataExplorerProps> = () => {
     </div>
   );
 };
-
 
 export default DataExplorer;

@@ -1,6 +1,6 @@
 import React from 'react';
 import bioDepotLogo from '/biodepot.png';
-import DataExplorer from './components/Data Explorer/DataExplorer';
+import DataExplorer from './components/DataExplorer';
 
 function App() {
   return (
