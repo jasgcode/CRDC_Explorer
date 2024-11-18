@@ -93,7 +93,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
 
   return (
     <div className="flex h-full bg-gray-50">
-      <div className="w-1/4 bg-white rounded-lg shadow-lg p-4 mr-4 overflow-hidden flex flex-col h-[70vh]">
+      <div className="w-1/4 bg-white rounded-lg shadow-lg p-4 mr-4 overflow-hidden flex flex-col h-[80vh]">
         {renderHeader()}
         <form onSubmit={handleSearchSubmit} className="mb-4">
           <div className="relative">
