@@ -1,4 +1,4 @@
-# CRDC Integrator
+# CRDC Data Explorer
 
 CRDC Integrator is a React-based web application that allows users to explore and analyze data from NCI Genomic Data Commons (GDC) and NCI Imaging Data Commons (IDC) through an intuitive interface.
 
