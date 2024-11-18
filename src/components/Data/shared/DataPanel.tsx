@@ -1,24 +1,38 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Search } from 'lucide-react';
-import { DataPanelProps } from '../../../types/interfaces';
+import { DataPanelProps, PatientInfo } from '../../../types/interfaces';
 import { usePatientData } from '../../../hooks/usePatientData';
 import { useSelectedPatient } from '../../../hooks/useSelectedPatient';
 import { PatientList } from '../PatientList';
 import ImagingDataPanel from '../Panels/ImagingDataPanel';
 import GenomicDataPanel from '../Panels/GenomicPanel';
+import { useInfiniteScroll } from '../../../hooks/useInfiniteScroll';
+
+const ITEMS_PER_PAGE = 20;
 
 const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) => {
   const listRef = useRef<HTMLUListElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [displayedPatients, setDisplayedPatients] = useState<PatientInfo[]>([]);
   
   const {
     patients,
     isLoading,
     isInitialLoad,
-    hasMore,
     error,
   } = usePatientData({ selectedCollection, filters });
+
+  const {
+    visibleItems,
+    hasMore,
+    isLoadingMore,
+    handleScroll
+  } = useInfiniteScroll({
+    totalItems: patients.length,
+    initialItemsPerPage: ITEMS_PER_PAGE,
+    threshold: 200
+  });
 
   const {
     selectedPatient,
@@ -29,18 +43,18 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
     handlePatientSelect
   } = useSelectedPatient(selectedCollection, filters);
 
-  // Add the missing handleScroll function
-  const handleScroll = useCallback(() => {
-    if (listRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-      if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoading && hasMore) {
-        // If you need to fetch more patients, you can do it here
-        console.log('Reached scroll threshold');
-      }
-    }
-  }, [isLoading, hasMore]);
+  // Update displayed patients when visibility changes
+  React.useEffect(() => {
+    setDisplayedPatients(patients.slice(0, visibleItems));
+  }, [patients, visibleItems]);
 
-  // Add the missing renderHeader function
+  // Handle scroll events
+  const onScroll = useCallback(() => {
+    if (listRef.current) {
+      handleScroll(listRef);
+    }
+  }, [handleScroll]);
+
   const renderHeader = useCallback(() => {
     return (
       <div className="flex items-center justify-between mb-2">
@@ -121,12 +135,12 @@ const DataPanel: React.FC<DataPanelProps> = ({ selectedCollection, filters }) =>
         <ul 
           ref={listRef} 
           className="divide-y divide-gray-200 overflow-y-auto flex-grow" 
-          onScroll={handleScroll}
+          onScroll={onScroll}
         >
           <PatientList
-            patients={patients}
+            patients={displayedPatients}
             selectedPatient={selectedPatient}
-            isLoading={isLoading}
+            isLoading={isLoading || isLoadingMore}
             isInitialLoad={isInitialLoad}
             hasMore={hasMore}
             error={error}
