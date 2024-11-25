@@ -2,6 +2,68 @@
 
 CRDC Integrator is a React-based web application that allows users to explore and analyze data from NCI Genomic Data Commons (GDC) and NCI Imaging Data Commons (IDC) through an intuitive interface.
 
+# CRDC Integrator User Guide
+
+## Getting Started
+
+1. After installation, navigate to `http://localhost:5173` in your browser.
+
+## Basic Workflow
+
+### 1. Collection Selection
+- Click "Select Collections" on the main dashboard
+![alt text](public/image.png)
+- View available data collections from GDC and IDC
+- Select a collection by clicking on it
+![alt text](public/image-2.png)
+
+### 2. Data Filtering
+After selecting a collection, use the filter panel to narrow down results:
+- Primary sites (e.g., Lung, Breast)
+
+![alt text](public/image-3.png)
+
+- Disease types
+
+![alt text](public/image-4.png)
+
+- Data categories
+
+![alt text](public/image-5.png)
+
+- Experimental strategies
+
+![alt text](public/image-6.png)
+
+### 3. Patient Data Access
+Two ways to access patient data:
+
+**Method 1: Direct ID Search**
+- Enter known patient ID in the search bar
+- System will display available genomic and imaging data
+
+![alt text](public/image-7.png)
+
+**Method 2: Browse Filtered Results**
+- After applying filters, browse the patient list
+- Click on a patient to view their complete profile
+
+![alt text](public/image-8.png)
+
+### 4. Data Visualization
+Patient profile displays:
+- Genomic data (if available)
+- Imaging data (if available)
+- Integrated visualizations showing correlations
+- Download options for detailed analysis
+
+## Tips
+- Use the reset button to clear all filters
+- Save frequently accessed patient IDs for quick reference
+- Export visualizations for reporting
+- Use browser refresh only when necessary as it resets current session
+
+
 ## Features
 
 - **Collection Management**: Browse and select from various data collections

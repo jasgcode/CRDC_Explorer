@@ -56,3 +56,4 @@ wheels/
 
 # pyenv
 .python-version
+qdrant_storage

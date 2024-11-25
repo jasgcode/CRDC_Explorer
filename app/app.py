@@ -183,7 +183,7 @@ def get_data():
 		#output = subprocess.check_output(command, shell=True, text=True, stderr=subprocess.STDOUT)
 		#records = json.loads(output)
 
-		if _format not in ["html", "json"]:
+		if _format not in ["json"]:
 			return jsonify({"error": f"Unsupported format: {_format}"}), 400
 
 		if _format == "json":
@@ -191,54 +191,6 @@ def get_data():
 			json_response = jsonify(records)
 			print("Debug: JSON response:", json_response.get_data(as_text=True), file=sys.stderr)
 			return json_response
-		else:
-			# Prepare HTML response
-			html_response = "<table id='data_table' border=1>"
-			# Header row
-			html_response += "<tr class=\"header\">"
-			for key in field_list:
-				if key == "StudyInstanceUID":
-					continue
-				elif key == "SeriesInstanceUID":
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1; position: relative\">OHIF</th>"
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1\">SliM</th>"
-				elif key == "gcs_url":
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1\">DICOM<br/>Image</th>"
-				elif key == "tcia_tumorLocation":
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1\">Tumor<br/>Location</th>"
-				elif key == "ImageType":
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1\">Image Details</th>"
-				elif key == "collection_id":
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1\">Collection ID</th>"
-				elif key in ["PatientID", "Patient Age", "Patient Weight", "Modality", "Manufacturer", "ManufacturerModelName"]:
-					html_response += "<th style=\"background: #80dfff; z-index: -1; position: relative\">" + key + "</th>"
-				elif key in ["StudyDate", "StudyDescription", "SeriesDescription", "collection_id", "SliceThickness", "PixelSpacing", "tcia_species", "tcia_tumorLocation"]:
-					html_response += "<th style=\"background: #bb99ff; z-index: -1\">" + key + "</th>"
-				else:
-					html_response += "<th style=\"background: #c2c2a3; z-index: -1; position: relative\">" + key + "</th>"
-			html_response += "</tr>"
-
-			# Data rows
-			for record in records:
-				html_response += "<tr>"
-				for key in field_list:
-					if key == "PatientID":
-						html_response += "<td><a href='case.php?PatientID=" + record['PatientID'] + "' target='_blank'>" + record['PatientID'] + "</a></td>"
-					elif key == "StudyInstanceUID":
-						continue
-					elif key == "SeriesInstanceUID":
-						html_response += "<td><a target='_blank' href='https://viewer.imaging.datacommons.cancer.gov/viewer/" + record["StudyInstanceUID"] + "?SeriesInstanceUID=" + record["SeriesInstanceUID"] + "'>OHIF</a></td>"
-						html_response += "<td><a target='_blank' href='https://viewer.imaging.datacommons.cancer.gov/slim/studies/" + record["StudyInstanceUID"] + "/series/" + record["SeriesInstanceUID"] + "'>SliM</a></td>"
-					elif key == "gcs_url":
-						html_response += "<td><a href='download.php?gcs_url=" + record["gcs_url"] + "'>Download</a></td>"
-					elif isinstance(record[key], list):
-						html_response += "<td>" + ",".join(record[key]) + "</td>"
-					else:
-						html_response += "<td>" + str(record[key]) + "</td>"
-				html_response += "</tr>"
-
-			html_response += "</table>"
-			return html_response
 	
 	except Exception as e:
 		print(f"Error in get_data: {str(e)}", file=sys.stderr)
