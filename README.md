@@ -12,9 +12,12 @@ CRDC Integrator is a React-based web application that allows users to explore an
 
 ### 1. Collection Selection
 - Click "Select Collections" on the main dashboard
+  
 ![alt text](public/image.png)
+
 - View available data collections from GDC and IDC
 - Select a collection by clicking on it
+  
 ![alt text](public/image-2.png)
 
 ### 2. Data Filtering
