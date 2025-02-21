@@ -82,7 +82,6 @@ Patient profile displays:
   - View integrated data visualization
 - **Real-time Updates**: Dynamic loading and filtering of patient data
 - **Responsive Design**: Works on desktop and tablet devices
-
 ## Tech Stack
 
 - React 18+ with TypeScript
@@ -314,12 +313,16 @@ export const API_CONFIG = {
   }
 };
 ```
+# Patient Similarity Search
+- In the app search directory run the index.py to build a FAISS Index
+- In the search.py load the FAISS index and then search for a patient using their UUID
 
 ## Known Issues
 
 - Large datasets may cause performance issues in the filter panel
 - Search functionality is case-sensitive
 - Some browser-specific styling inconsistencies
+
 
 ## Future Improvements
 
@@ -329,7 +332,8 @@ export const API_CONFIG = {
 - Improve mobile responsiveness
 - Add history of patient selections
 - Implement advanced visualization features
-
+- Make the FAISS index building process more robust
+- Make the search not need patient UUID and just their Patient ID
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
